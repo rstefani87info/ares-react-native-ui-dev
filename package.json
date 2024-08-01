@@ -1,0 +1,14 @@
+{
+  "name": "@ares/react-native-ui-dev",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Roberto Stefani",
+  "license": "MIT",
+  "dependencies": {
+    "@ares/core": "github:rstefani87info/ares-core#master"
+  }
+}
