@@ -10,7 +10,7 @@ if(command.charAt(':')>-1){
 
 console.log("Executing command: ", command, subfunction);
 try {
-    command = (await import('./' + command+ '.js')).default; 
+    command = (await import('./' + command+ '.js')); 
     if(subfunction){
         subfunction = command[subfunction];
     }
