@@ -18,6 +18,7 @@ try {
         subfunction = command.default;
     }
     const paramSet= args.slice(1).map(p=> Number(p) || p);
+    console.log("Executing function: ",  subfunction, paramSet);
     subfunction(...paramSet);
 } catch (err) {
     console.error(err);
