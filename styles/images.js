@@ -10,6 +10,7 @@ function images( imageDirectory, mappingFile) {
         ret[files.getFileNameAsPropertyName(imageFile)] = Image.resolveAssetSource(imagePath);
     });
     files.setFileContent(mappingFile, JSON.stringify(ret), 'utf8'); 
+    console.log('Images created: ', ret);
 }
 
 export default images();

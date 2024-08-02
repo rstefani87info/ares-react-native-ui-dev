@@ -14,7 +14,8 @@ import * as files from '@ares/files';
       src: `url(data:font/ttf;charset=utf-8;base64,${fontBase64})`,
     };
   });
-  files.setFileContent(mappingFile, JSON.stringify(ret), 'utf8');  
+  files.setFileContent(mappingFile, JSON.stringify(ret), 'utf8'); 
+  console.log('Font families created: ', ret); 
 }
 
 export default fontFamilies();
