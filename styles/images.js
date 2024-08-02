@@ -13,5 +13,5 @@ function images( imageDirectory, mappingFile) {
     console.log('Images created: ', ret);
 }
 
-export default images();
+export default images;
 

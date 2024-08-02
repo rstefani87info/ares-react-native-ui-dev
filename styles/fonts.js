@@ -18,4 +18,4 @@ import * as files from '@ares/files';
   files.setFileContent(mappingFile, JSON.stringify(ret), 'utf8');  
 }
 
-export default fontFamilies();
+export default fontFamilies;
