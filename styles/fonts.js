@@ -1,5 +1,6 @@
 
 import path from 'path';
+import fs from 'fs';
 import * as files from '@ares/files';
 
  function fontFamilies(fontDirectory, mappingFile) {
@@ -14,8 +15,7 @@ import * as files from '@ares/files';
       src: `url(data:font/ttf;charset=utf-8;base64,${fontBase64})`,
     };
   });
-  files.setFileContent(mappingFile, JSON.stringify(ret), 'utf8'); 
-  console.log('Font families created: ', ret); 
+  files.setFileContent(mappingFile, JSON.stringify(ret), 'utf8');  
 }
 
 export default fontFamilies();
