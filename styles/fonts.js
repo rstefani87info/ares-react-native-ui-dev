@@ -12,7 +12,6 @@ import * as files from '@ares/files';
     const fontBase64 = fontData.toString('base64');
     ret[fontFile] = {
       fontFamily: fontFile,
-      src: `url(data:font/ttf;charset=utf-8;base64,${fontBase64})`,
     };
   });
   files.setFileContent(mappingFile, JSON.stringify(ret), 'utf8');  
