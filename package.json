@@ -1,14 +1,28 @@
 {
   "name": "@ares/react-native-ui-dev",
+  "main": "expo-router/entry",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
   "type": "module",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rstefani87info/ares-react-native-ui-dev.git"
   },
+  "keywords": [
+    "ares",
+    "react",
+    "react-native",
+    "android",
+    "ios",
+    "react-native-ui-dev",
+    "react-native-elements",
+    "react-native-web"
+  ],
   "author": "Roberto Stefani",
   "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/rstefani87info/ares-react-native-ui-dev/issues"
+  },
+  "homepage": "https://github.com/rstefani87info/ares-react-native-ui-dev#readme",
   "dependencies": {
     "@ares/core": "github:rstefani87info/ares-core#master"
   }
