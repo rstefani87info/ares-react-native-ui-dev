@@ -1,0 +1,416 @@
+import path from 'path';
+import * as files  from '@ares/files';
+
+/**
+ * Story Engine - A JSON-based system for creating and managing Storybook stories
+ * This allows defining component stories in JSON format instead of individual JS files
+ */
+export class StoryEngine {
+  constructor(storiesDir = null) {
+    this.storiesDir = storiesDir || path.join(process.cwd(), 'components', 'stories');
+    this.storiesConfigPath = path.join(this.storiesDir, 'stories.json');
+    this.ensureDirectoryExists();
+    this.loadStoriesConfig();
+  }
+
+  /**
+   * Ensure the stories directory exists
+   */
+  ensureDirectoryExists() {
+    if (!files.directoryExists(this.storiesDir)) {
+      files.createDirectory(this.storiesDir, { recursive: true });
+    }
+  }
+
+  /**
+   * Load the stories configuration from JSON file
+   */
+  loadStoriesConfig() {
+    if (files.fileExists(this.storiesConfigPath)) {
+      try {
+        this.storiesConfig = JSON.parse(files.readFile(this.storiesConfigPath, 'utf8'));
+      } catch (error) {
+        console.error('Error parsing stories configuration:', error);
+        this.storiesConfig = { components: {} };
+      }
+    } else {
+      this.storiesConfig = { components: {} };
+    }
+  }
+
+  /**
+   * Save the stories configuration to JSON file
+   */
+  saveStoriesConfig() {
+    files.writeFile(
+      this.storiesConfigPath, 
+      JSON.stringify(this.storiesConfig, null, 2)
+    );
+  }
+
+  /**
+   * Add a component story to the configuration
+   * @param {string} componentPath - Path to the component
+   * @param {Object} storyConfig - Configuration for the story
+   */
+  addComponentStory(componentPath, storyConfig = {}) {
+    if (!componentPath) {
+      console.error('Error: Component path is required');
+      return false;
+    }
+
+    try {
+      // Resolve the component path
+      const resolvedPath = path.resolve(componentPath);
+      
+      // Check if the component file exists
+      if (!files.fileExists(resolvedPath)) {
+        console.error(`Error: Component file not found at ${resolvedPath}`);
+        return false;
+      }
+
+      // Extract component name from the file path
+      const componentFileName = path.basename(resolvedPath);
+      const componentName = componentFileName.split('.')[0];
+      
+      // Calculate the relative import path
+      const relativePath = path.relative(
+        this.storiesDir,
+        resolvedPath
+      ).replace(/\\/g, '/');
+
+      // Create default story configuration if not provided
+      const defaultStoryConfig = {
+        title: `Components/${componentName}`,
+        importPath: relativePath,
+        parameters: {
+          componentSubtitle: `${componentName} component`,
+        },
+        argTypes: {},
+        stories: {
+          Default: {
+            args: {}
+          }
+        }
+      };
+
+      // Merge provided config with defaults
+      const mergedConfig = {
+        ...defaultStoryConfig,
+        ...storyConfig,
+        importPath: relativePath // Always use the calculated import path
+      };
+
+      // Add to the stories configuration
+      this.storiesConfig.components[componentName] = mergedConfig;
+      
+      // Save the updated configuration
+      this.saveStoriesConfig();
+      
+      console.log(`Story for ${componentName} added to configuration`);
+      return true;
+    } catch (error) {
+      console.error('Error adding component story:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Remove a component story from the configuration
+   * @param {string} componentName - Name of the component
+   */
+  removeComponentStory(componentName) {
+    if (this.storiesConfig.components[componentName]) {
+      delete this.storiesConfig.components[componentName];
+      this.saveStoriesConfig();
+      console.log(`Story for ${componentName} removed from configuration`);
+      return true;
+    } else {
+      console.log(`No story found for component ${componentName}`);
+      return false;
+    }
+  }
+
+  /**
+   * Generate all story files from the configuration
+   */
+  generateStoryFiles() {
+    console.log('Generating story files from configuration...');
+    
+    // Create the index file that will import all stories
+    const indexContent = this.generateIndexFile();
+    files.writeFile(path.join(this.storiesDir, 'index.js'), indexContent);
+    
+    // Generate individual story files
+    Object.entries(this.storiesConfig.components).forEach(([componentName, config]) => {
+      const storyContent = this.generateStoryFile(componentName, config);
+      files.writeFile(path.join(this.storiesDir, `${componentName}.stories.js`), storyContent);
+    });
+    
+    console.log('Story files generated successfully');
+  }
+
+  /**
+   * Generate the index file that imports all stories
+   */
+  generateIndexFile() {
+    const imports = Object.keys(this.storiesConfig.components)
+      .map(componentName => `import './${componentName}.stories.js';`)
+      .join('\n');
+    
+    return `// This file is auto-generated by StoryEngine
+// Do not edit manually
+
+${imports}
+`;
+  }
+
+  /**
+   * Generate a story file for a component
+   * @param {string} componentName - Name of the component
+   * @param {Object} config - Story configuration
+   */
+  generateStoryFile(componentName, config) {
+    const { title, importPath, parameters, argTypes, stories } = config;
+    
+    // Generate the stories exports
+    const storiesExports = Object.entries(stories)
+      .map(([storyName, storyConfig]) => {
+        const argsString = JSON.stringify(storyConfig.args, null, 2);
+        return `
+export const ${storyName} = {
+  args: ${argsString},
+  ${storyConfig.parameters ? `parameters: ${JSON.stringify(storyConfig.parameters, null, 2)},` : ''}
+  ${storyConfig.decorators ? `decorators: ${storyConfig.decorators},` : ''}
+};`;
+      })
+      .join('\n');
+    
+    return `// This file is auto-generated by StoryEngine
+// Do not edit manually
+
+import React from 'react';
+import ${componentName} from '${importPath}';
+
+export default {
+  title: '${title}',
+  component: ${componentName},
+  parameters: ${JSON.stringify(parameters, null, 2)},
+  argTypes: ${JSON.stringify(argTypes, null, 2)},
+};
+
+const Template = (args) => <${componentName} {...args} />;
+${storiesExports}
+`;
+  }
+
+  /**
+   * Add a story to an existing component configuration
+   * @param {string} componentName - Name of the component
+   * @param {string} storyName - Name of the story to add
+   * @param {Object} storyConfig - Configuration for the story
+   * @returns {boolean} - Success status
+   */
+  addStory(componentName, storyName, storyConfig = { args: {} }) {
+    if (!componentName || !storyName) {
+      console.error('Error: Component name and story name are required');
+      return false;
+    }
+
+    if (!this.storiesConfig.components[componentName]) {
+      console.error(`Error: Component ${componentName} not found in configuration`);
+      return false;
+    }
+
+    // Add the story to the component's stories
+    this.storiesConfig.components[componentName].stories[storyName] = storyConfig;
+    
+    // Save the updated configuration
+    this.saveStoriesConfig();
+    
+    console.log(`Story "${storyName}" added to component ${componentName}`);
+    return true;
+  }
+
+  /**
+   * Remove a story from an existing component configuration
+   * @param {string} componentName - Name of the component
+   * @param {string} storyName - Name of the story to remove
+   * @returns {boolean} - Success status
+   */
+  removeStory(componentName, storyName) {
+    if (!componentName || !storyName) {
+      console.error('Error: Component name and story name are required');
+      return false;
+    }
+
+    if (!this.storiesConfig.components[componentName]) {
+      console.error(`Error: Component ${componentName} not found in configuration`);
+      return false;
+    }
+
+    if (!this.storiesConfig.components[componentName].stories[storyName]) {
+      console.error(`Error: Story ${storyName} not found in component ${componentName}`);
+      return false;
+    }
+
+    // Remove the story from the component's stories
+    delete this.storiesConfig.components[componentName].stories[storyName];
+    
+    // Save the updated configuration
+    this.saveStoriesConfig();
+    
+    console.log(`Story "${storyName}" removed from component ${componentName}`);
+    return true;
+  }
+
+  /**
+   * Update a component's configuration
+   * @param {string} componentName - Name of the component
+   * @param {Object} configUpdates - Updates to apply to the component configuration
+   * @returns {boolean} - Success status
+   */
+  updateComponentConfig(componentName, configUpdates) {
+    if (!componentName) {
+      console.error('Error: Component name is required');
+      return false;
+    }
+
+    if (!this.storiesConfig.components[componentName]) {
+      console.error(`Error: Component ${componentName} not found in configuration`);
+      return false;
+    }
+
+    // Update the component configuration
+    this.storiesConfig.components[componentName] = {
+      ...this.storiesConfig.components[componentName],
+      ...configUpdates
+    };
+    
+    // Save the updated configuration
+    this.saveStoriesConfig();
+    
+    console.log(`Configuration for component ${componentName} updated`);
+    return true;
+  }
+}
+
+/**
+ * Command line interface for the Story Engine
+ */
+function cli() {
+  const command = process.argv[2];
+  const args = process.argv.slice(3);
+  
+  const engine = new StoryEngine();
+  
+  switch (command) {
+    case 'add':
+      if (args.length < 1) {
+        console.error('Error: Component path is required');
+        console.log('Usage: node storyEngine.js add <path-to-component> [storyConfigPath]');
+        process.exit(1);
+      }
+      
+      const componentPath = args[0];
+      let storyConfig = {};
+      
+      // If a config file is provided, load it
+      if (args[1]) {
+        try {
+          storyConfig = JSON.parse(files.readFile(args[1], 'utf8'));
+        } catch (error) {
+          console.error('Error loading story config:', error);
+          process.exit(1);
+        }
+      }
+      
+      engine.addComponentStory(componentPath, storyConfig);
+      break;
+      
+    case 'remove':
+      if (args.length < 1) {
+        console.error('Error: Component name is required');
+        console.log('Usage: node storyEngine.js remove <component-name>');
+        process.exit(1);
+      }
+      
+      engine.removeComponentStory(args[0]);
+      break;
+      
+    case 'generate':
+      engine.generateStoryFiles();
+      break;
+      
+    case 'add-story':
+      if (args.length < 2) {
+        console.error('Error: Component name and story name are required');
+        console.log('Usage: node storyEngine.js add-story <component-name> <story-name> [storyConfigPath]');
+        process.exit(1);
+      }
+      
+      const componentName = args[0];
+      const storyName = args[1];
+      let storyDetails = { args: {} };  // Changed variable name from storyConfig to storyDetails
+      
+      // If a config file is provided, load it
+      if (args[2]) {
+        try {
+          storyDetails = JSON.parse(files.readFile(args[2], 'utf8'));  // Using storyDetails instead
+        } catch (error) {
+          console.error('Error loading story config:', error);
+          process.exit(1);
+        }
+      }
+      
+      engine.addStory(componentName, storyName, storyDetails);  // Using storyDetails instead
+      break;
+      
+    case 'remove-story':
+      if (args.length < 2) {
+        console.error('Error: Component name and story name are required');
+        console.log('Usage: node storyEngine.js remove-story <component-name> <story-name>');
+        process.exit(1);
+      }
+      
+      engine.removeStory(args[0], args[1]);
+      break;
+      
+    case 'update-component':
+      if (args.length < 2) {
+        console.error('Error: Component name and config file are required');
+        console.log('Usage: node storyEngine.js update-component <component-name> <configPath>');
+        process.exit(1);
+      }
+      
+      let configUpdates = {};
+      try {
+        configUpdates = JSON.parse(files.readFile(args[1], 'utf8'));
+      } catch (error) {
+        console.error('Error loading config updates:', error);
+        process.exit(1);
+      }
+      
+      engine.updateComponentConfig(args[0], configUpdates);
+      break;
+    
+    default:
+      console.log(`
+Story Engine - JSON-based Storybook story management
+
+Usage:
+  node storyEngine.js add <path-to-component> [storyConfigPath]       - Add a component story
+  node storyEngine.js remove <component-name>                         - Remove a component story
+  node storyEngine.js add-story <component-name> <story-name> [configPath] - Add a story to a component
+  node storyEngine.js remove-story <component-name> <story-name>      - Remove a story from a component
+  node storyEngine.js update-component <component-name> <configPath>  - Update component configuration
+  node storyEngine.js generate                                        - Generate story files from configuration
+`);
+      break;
+  }
+}
+
+// If the file is executed directly
+if (import.meta.url === `file://${process.argv[1]}`) {
+  cli();
+}

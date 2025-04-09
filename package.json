@@ -24,6 +24,10 @@
   },
   "homepage": "https://github.com/rstefani87info/ares-react-native-ui-dev#readme",
   "dependencies": {
-    "@ares/core": "git+https://github.com/rstefani87info/ares-core.git#master"
+    "@ares/core": "git+https://github.com/rstefani87info/ares-core.git#master",
+    "@ares/files": "git+https://github.com/rstefani87info/ares-files.git#master",
+    "@ares/react-native-ui": "git+https://github.com/rstefani87info/ares-react-native-ui.git#master",
+    "@storybook/react": "^8.6.12",
+    "@storybook/react-native": "^8.6.2"
   }
 }
