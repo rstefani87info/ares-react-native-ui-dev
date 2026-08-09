@@ -13,7 +13,7 @@ try {
 
     packageJson.scripts = {
       ...packageJson.scripts,
-      start: "node node_modules/@ares/react-native-ui-dev/start.js",
+      start: "node node_modules/@ares/react-native-ui-dev/scripts/start.js",
     };
 
     setFileContent(packageJsonPath, JSON.stringify(packageJson, null, 2));

@@ -24,11 +24,12 @@
   },
   "homepage": "https://github.com/rstefani87info/ares-react-native-ui-dev#readme",
   "dependencies": {
-    "@ares/core": "git+https://github.com/rstefani87info/ares-core.git#master",
-    "@ares/files": "git+https://github.com/rstefani87info/ares-files.git#master",
-    "@ares/react-native-ui": "git+https://github.com/rstefani87info/ares-react-native-ui.git#master"
+    "@ares/core": "workspace:^",
+    "@ares/files": "workspace:^",
+    "@ares/react-native-ui": "workspace:^"
   },
   "scripts": {
-    "postinstall": "node ./scripts/setup.js"
+    "postinstall": "node ./scripts/setup.js",
+    "start": "node ./scripts/start.js"
   }
 }
