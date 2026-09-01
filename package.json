@@ -31,5 +31,8 @@
   "scripts": {
     "postinstall": "node ./scripts/setup.js",
     "start": "node ./scripts/start.js"
+  },
+  "devDependencies": {
+    "@ares/scd": "workspace:^"
   }
 }
